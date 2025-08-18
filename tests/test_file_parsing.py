@@ -17,10 +17,10 @@
 # print(text)
 
 
-from pathlib import Path
-test = Path("/Users/phillipmcdonough/Desktop/test.txt")
+# from pathlib import Path
+# test = Path("/Users/phillipmcdonough/Desktop/test.txt")
 
-if test.suffix == ".txt":
-    with open(test, "r") as file:
-        t = file.read()
-print(t)
+# if test.suffix == ".txt":
+#     with open(test, "r") as file:
+#         t = file.read()
+# print(t)

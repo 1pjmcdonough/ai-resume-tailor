@@ -1,13 +1,14 @@
+import json
 import os
-import re
-from typing import Dict, List
+from pathlib import Path
+
+import PyPDF2
+from docx import Document
 from dotenv import load_dotenv
 from openai import OpenAI
-import PyPDF2
-import io
-from data_classes import ResumeData, JobDescription
-from pathlib import Path
-from docx import Document
+
+from data_classes import Prompt
+from models import get_client
 
 # Load environment variables
 dotenv_path = Path( Path(__file__).parent.parent, ".env" )
@@ -16,9 +17,12 @@ api_key = os.getenv("XAI_API_KEY")
 
 class TailorResume:
     
-    def __init__(self):
-        self.resume_path: Path
-        self.job_desc_path: Path
+    def __init__(self, resume_path: Path, job_desc_path: Path):
+        self.resume_path: Path = resume_path
+        self.job_desc_path: Path = job_desc_path
+        self.resume_text: str = self.upload_resume(self.resume_path)
+        self.job_desc_text: str = self.upload_job_desc(self.job_desc_path)
+        self.model: OpenAI = get_client("grok-4-0709")
 
 
     def parse_file(self, file_path: Path) -> str:
@@ -38,29 +42,43 @@ class TailorResume:
             raise ValueError(f"Unsupported file type: {file_type}")
 
 
-    def upload_resume(self) -> str:
+    def upload_resume(self, resume_path: Path) -> str:
         """Parse resume file (PDF or DOCX) and extract text content"""
-        self.resume = self.parse_file(self.resume_path)
+        return self.parse_file(resume_path)
 
 
-    def upload_job_desc(self) -> str:
+    def upload_job_desc(self, job_desc_path: Path) -> str:
         """Parse job description file and extract key information"""
-        self.job_desc = self.parse_file(self.job_desc_path)
+        return self.parse_file(job_desc_path)
 
 
-    def tailor_resume(self, resume_data: ResumeData, job_desc: JobDescription, 
-                      guidelines: str = "") -> Dict[str, str]:
-        """Tailor resume to match job description using AI"""
+    def get_prompt(self, user_context: str = "") -> Prompt:
+        sys_prompt_path = Path( Path(__file__).parent.parent, "prompts", "full_sys_prompt.txt" )
+        usr_prompt_path = Path( Path(__file__).parent.parent, "prompts", "usr_prompt.txt" )
+
+        with open(sys_prompt_path, "r") as f:
+            sys_prompt = f.read()
+
+        with open(usr_prompt_path, "r") as f:
+            usr_prompt = f.read()
+            usr_prompt = usr_prompt.replace("{job_desc}", self.job_desc_text)
+            usr_prompt = usr_prompt.replace("{resume}", self.resume_text)
+            usr_prompt = usr_prompt.replace("{user_context}", user_context)
+
+        return Prompt(sys_prompt=sys_prompt, usr_prompt=usr_prompt)
+
         
-        user_prompt = ""
+    def tailor_resume(self, user_context: str = "") -> json:
+        """Tailor resume to match job description using AI"""
+        prompt = self.get_prompt(user_context)
 
         # Make the AI call
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "system", "content": prompt.sys_prompt},
+                    {"role": "user", "content": prompt.usr_prompt}
                 ],
                 temperature=0.7,
                 top_p=0.8,
@@ -70,56 +88,7 @@ class TailorResume:
             ai_response = response.choices[0].message.content
             
             # Parse the AI response into structured output
-            return self._parse_ai_response(ai_response)
+            return ai_response
             
         except Exception as e:
             raise Exception(f"Error calling AI model: {str(e)}")
-
-    def _parse_ai_response(self, ai_response: str) -> Dict[str, str]:
-        """Parse AI response into structured sections"""
-        sections = {
-            'tailored_resume': '',
-            'cover_letter': '',
-            'changes_summary': '',
-            'word_count': '',
-            'recommendations': ''
-        }
-        
-        # Simple parsing based on common section headers
-        current_section = None
-        lines = ai_response.split('\n')
-        
-        for line in lines:
-            line_lower = line.lower().strip()
-            
-            if 'tailored resume' in line_lower or 'resume:' in line_lower:
-                current_section = 'tailored_resume'
-            elif 'cover letter' in line_lower or 'letter:' in line_lower:
-                current_section = 'cover_letter'
-            elif 'changes' in line_lower or 'summary' in line_lower:
-                current_section = 'changes_summary'
-            elif 'word count' in line_lower or 'page' in line_lower:
-                current_section = 'word_count'
-            elif 'recommendations' in line_lower or 'suggestions' in line_lower:
-                current_section = 'recommendations'
-            elif current_section and line.strip():
-                sections[current_section] += line + '\n'
-        
-        return sections
-
-def main():
-    """Example usage of the TailorResume"""
-    agent = TailorResume()
-    
-    print("Resume Tailor AI Agent")
-    print("=" * 50)
-    print("This agent can:")
-    print("1. Parse resume files (PDF/DOCX)")
-    print("2. Extract job requirements and keywords") #remove this so the ai does it
-    print("3. Tailor resumes to match job descriptions")
-    print("4. Generate personalized cover letters") #change to different class
-    print("5. Ensure 1-page limit compliance")
-    print("\nUse the agent through the UI or import it into your scripts.") #remove cli.py probably
-
-if __name__ == "__main__":
-    main()

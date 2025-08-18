@@ -7,7 +7,7 @@ dotenv_path = Path( Path(__file__).parent.parent, ".env" )
 load_dotenv(dotenv_path=dotenv_path)
 
 
-def get_client(model: str):
+def get_client(model: str) -> OpenAI:
     if model == "grok-4-0709":
         return OpenAI(
             api_key=os.getenv("XAI_API_KEY"),

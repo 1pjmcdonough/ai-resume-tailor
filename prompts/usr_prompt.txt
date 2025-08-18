@@ -1,0 +1,11 @@
+Analyze the following job description and resume. 
+Suggest edits to better align the resume with the job description according to the system prompt instructions.
+
+# Job Description
+{job_desc}
+
+# Resume
+{resume}
+
+# Additional Context
+{user_context}
