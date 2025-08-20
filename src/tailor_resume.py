@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from data_classes import Prompt
-from models import get_client
+from models import set_client
 
 # Load environment variables
 dotenv_path = Path( Path(__file__).parent.parent, ".env" )
@@ -16,13 +16,11 @@ load_dotenv(dotenv_path=dotenv_path)
 api_key = os.getenv("XAI_API_KEY")
 
 class TailorResume:
-    
     def __init__(self, resume_path: Path, job_desc_path: Path):
         self.resume_path: Path = resume_path
         self.job_desc_path: Path = job_desc_path
-        self.resume_text: str = self.upload_resume(self.resume_path)
-        self.job_desc_text: str = self.upload_job_desc(self.job_desc_path)
-        self.model: OpenAI = get_client("grok-4-0709")
+        self.resume_text = self.upload_resume(resume_path)
+        self.job_desc_text = self.upload_job_desc(job_desc_path)
 
 
     def parse_file(self, file_path: Path) -> str:
@@ -50,6 +48,10 @@ class TailorResume:
     def upload_job_desc(self, job_desc_path: Path) -> str:
         """Parse job description file and extract key information"""
         return self.parse_file(job_desc_path)
+
+    
+    def configure_client(self, model: str = "grok-4-0709") -> OpenAI:
+        self.client = set_client(model)
 
 
     def get_prompt(self, user_context: str = "") -> Prompt:
@@ -92,3 +94,10 @@ class TailorResume:
             
         except Exception as e:
             raise Exception(f"Error calling AI model: {str(e)}")
+
+# resume = Path("/Users/phillipmcdonough/Desktop/McDonough_Phil_J.pdf")
+# jd = Path("/Users/phillipmcdonough/Downloads/job_desc.pdf")
+# test = TailorResume(resume, jd)
+# test.configure_client()
+# from pprint import pprint
+# pprint(test.tailor_resume())
