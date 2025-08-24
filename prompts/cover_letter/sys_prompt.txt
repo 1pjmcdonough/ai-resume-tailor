@@ -1,0 +1,3 @@
+        #TODO: update sys_prompt for cover letter to output a T style cover letter with paragraph before and after. 
+        # Also include constraints from resume sys prompt, and make it output in a style easy to parse then convert to a docx file
+        # also make sure the CL focuses on language used in the job description over the resume. 

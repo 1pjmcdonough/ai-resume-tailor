@@ -1,0 +1,1 @@
+Fill in usr prompt with main task, job description, resume, and user context
