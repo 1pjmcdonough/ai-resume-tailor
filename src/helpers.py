@@ -16,18 +16,17 @@ class Prompt:
 
 
 class Model(Enum):
-    GROK = "grok-4-0709"
-    GPT = "gpt-4o-mini"
+    GROK4 = "grok-4-0709"
+    GPT4o = "gpt-4o-mini"
 
 
-#TODO: change model types to the enums in helpers and maybe move this to helpers too
-def set_client(model: Model) -> OpenAI:
-    if model == Model.GROK:
+def set_client(model: str) -> OpenAI:
+    if model == Model.GROK4.name:
         return OpenAI(
             api_key=os.getenv("XAI_API_KEY"),
             base_url="https://api.x.ai/v1"
         )
-    elif model == Model.GPT:
+    elif model == Model.GPT4o.name:
         return OpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
             base_url="https://api.openai.com/v1"

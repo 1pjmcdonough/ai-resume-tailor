@@ -1,24 +1,30 @@
 import json
 import os
 from pathlib import Path
+from typing import Optional
 
 import PyPDF2
 from docx import Document
+from pydantic.errors import NoneIsNotAllowedError
 
-from helpers import Prompt, set_client, Model
+from helpers import Prompt, set_client
 
 
 class JobTailor:
-    def __init__(self, resume_path: Path, job_desc_path: Path):
+    def __init__(self):
+        pass
+
+
+    def upload_resume(self, resume_path: Path) -> bool:
         self.resume_filename = resume_path.name
         self.resume_text = self.parse_file(resume_path)
+        return True
 
+    
+    def upload_job_desc(self, job_desc_path: Path) -> bool:
         self.job_desc_filename = job_desc_path.name
-        self.job_desc_text = self.parse_file(job_desc_path)
-
-        self.user_context: str = ""
-
-        self.model: Model = Model.GROK
+        self.job_desc_text = self.parse_file(job_desc_path) 
+        return True
 
 
     def parse_file(self, file_path: Path) -> str:
@@ -42,23 +48,30 @@ class JobTailor:
         self.user_context = user_context
 
     
-    def configure_client(self, model: Model) -> None:
-        self.client = set_client(model)
+    def set_model(self, model: str) -> None:
+        self.model = model
+
+
+    def configure_client(self) -> None:
+        self.client = set_client(self.model)
 
         
-    def tailor_resume(self) -> json:
+    def tailor_resume(self) -> None:
         try:
-            return self.generate_prompt("tailor_resume")
+            resume_edits = self.generate_prompt("tailor_resume")
+            self.resume_edits = resume_edits
+            #TODO: add method to convert output into a docx file and download that (maybe one methods to download files that both these methods use)
         except Exception as e:
             raise Exception(f"Error tailoring resume: {str(e)}")
 
     
-    def generate_cover_letter(self) -> json:
+    def generate_cover_letter(self) -> None:
         try:
-            return self.generate_prompt("cover_letter")
-            #TODO: add functionality to convert output into a docx file and return that instead
+            cover_letter = self.generate_prompt("cover_letter")
+            self.cover_letter = cover_letter
+            #TODO: add method to convert output into a docx file and download that
         except Exception as e:
-            raise Exception(f"Error tailoring resume: {str(e)}")
+            raise Exception(f"Error generating cover letter: {str(e)}")
 
     
     def generate_prompt(self, purpose: str) -> json:

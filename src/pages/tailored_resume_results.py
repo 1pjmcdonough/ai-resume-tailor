@@ -3,6 +3,33 @@ from pathlib import Path
 
 results = Path( Path(__file__).parent.parent.parent, "results", "tailored_resume.json")
 
+def main():
+    header_section()
+
+    if results:
+        results_section()
+    else:
+        st.info("Tailor your resume for results!")
+
+
+def header_section():
+    # col1, col2, col3 = st.columns(3)
+    # with col1:
+    #     st.page_link("homepage.py", label="Homepage")
+    # with col2:
+    #     st.page_link("pages/tailored_resume_results.py", label="Tailored Resume Results") #move to only be available once results are ready (move to tailoring section)
+    # with col3:
+    #     st.page_link("pages/generated_cover_letter.py", label="Generated Cover Letter") # same as above but for cover letter
+        
+    st.set_page_config(
+        page_title="Tailored Resume Results",
+        layout="wide"
+    )
+    
+    st.title("AI Job Tailor")
+    st.divider()
+
+
 def results_section(): #ai_response: json
     st.header("Resume Optimization Suggestions", anchor="results")
     # --- Keywords ---
@@ -86,7 +113,6 @@ def results_section(): #ai_response: json
     #         else:
     #             st.warning("No recommendations available.")
 
-if results:
-    results_section()
-else:
-    st.info("Tailor your resume for results!")
+
+if __name__ == "__main__":
+    main()
