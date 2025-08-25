@@ -1,11 +1,8 @@
 import json
-import os
 from pathlib import Path
-from typing import Optional
 
 import PyPDF2
 from docx import Document
-from pydantic.errors import NoneIsNotAllowedError
 
 from helpers import Prompt, set_client
 
@@ -15,16 +12,14 @@ class JobTailor:
         pass
 
 
-    def upload_resume(self, resume_path: Path) -> bool:
-        self.resume_filename = resume_path.name
+    def upload_resume(self, resume_path: Path) -> None:
+        self.resume_filename = resume_path.stem
         self.resume_text = self.parse_file(resume_path)
-        return True
 
     
-    def upload_job_desc(self, job_desc_path: Path) -> bool:
-        self.job_desc_filename = job_desc_path.name
-        self.job_desc_text = self.parse_file(job_desc_path) 
-        return True
+    def upload_job_desc(self, job_desc_path: Path) -> None:
+        self.job_desc_filename = job_desc_path.stem
+        self.job_desc_text = self.parse_file(job_desc_path)
 
 
     def parse_file(self, file_path: Path) -> str:
@@ -60,21 +55,23 @@ class JobTailor:
         try:
             resume_edits = self.generate_prompt("tailor_resume")
             self.resume_edits = resume_edits
-            #TODO: add method to convert output into a docx file and download that (maybe one methods to download files that both these methods use)
         except Exception as e:
             raise Exception(f"Error tailoring resume: {str(e)}")
+        
+        self.save_response(resume_edits, "resume_edits")
 
     
     def generate_cover_letter(self) -> None:
         try:
             cover_letter = self.generate_prompt("cover_letter")
             self.cover_letter = cover_letter
-            #TODO: add method to convert output into a docx file and download that
         except Exception as e:
             raise Exception(f"Error generating cover letter: {str(e)}")
 
+        self.save_response(cover_letter, "cover_letter")
+
     
-    def generate_prompt(self, purpose: str) -> json:
+    def generate_prompt(self, purpose: str) -> str:
         """Tailor resume to match job description using AI"""
         prompt = self.get_prompt(purpose)
 
@@ -106,3 +103,31 @@ class JobTailor:
             usr_prompt = usr_prompt.replace("{user_context}", self.user_context)
 
         return Prompt(sys_prompt=sys_prompt, usr_prompt=usr_prompt)
+
+
+    def save_response(self, response: str, response_type: str) -> None:
+        """Save a single response as a text file in organized folders"""
+        try:
+            response_history_path = Path(Path(__file__).parent.parent, "response_history")
+            curr_response_folder = f"{self.resume_filename}_for_{self.job_desc_filename}"
+            curr_response_path = Path(response_history_path, curr_response_folder) 
+            curr_response_path.mkdir(exist_ok=True)
+
+            filename = f"{response_type}.txt"
+            response_path = Path(response_history_path, filename)
+            with open(response_path, "w", encoding="utf-8") as f:
+                f.write(response)
+            
+            metadata = {
+                "resume_filename": self.resume_filename,
+                "job_description_filename": self.job_desc_filename,
+                "user_context": getattr(self, 'user_context', ''),
+                "model_used": getattr(self, 'model', '')
+            }
+            
+            metadata_path = Path(response_history_path, "metadata.json")
+            with open(metadata_path, "w", encoding="utf-8") as f:
+                json.dump(metadata, f, indent=2)
+                
+        except Exception as e:
+            raise Exception(f"Error saving response: {str(e)}")
