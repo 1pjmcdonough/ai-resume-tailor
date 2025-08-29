@@ -1,24 +1,28 @@
 import json
 from pathlib import Path
+from typing import Optional
 
 import PyPDF2
 from docx import Document
+from openai import OpenAI
 
 from helpers import Prompt, set_client
 
 
 class JobTailor:
     def __init__(self):
-        pass
+        self.model: Optional[str] = "grok-4-0709"
+        self.client: OpenAI = set_client(self.model)
+        self.user_context: Optional[str] = ""
+        self.resume_filename: Optional[str] = ""
+        self.job_desc_filename: Optional[str] = ""
 
 
     def upload_resume(self, resume_path: Path) -> None:
-        self.resume_filename = resume_path.stem
         self.resume_text = self.parse_file(resume_path)
 
     
     def upload_job_desc(self, job_desc_path: Path) -> None:
-        self.job_desc_filename = job_desc_path.stem
         self.job_desc_text = self.parse_file(job_desc_path)
 
 
@@ -38,10 +42,6 @@ class JobTailor:
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
-
-    def add_user_context(self, user_context: str) -> None:
-        self.user_context = user_context
-
     
     def set_model(self, model: str) -> None:
         self.model = model
@@ -54,23 +54,19 @@ class JobTailor:
     def tailor_resume(self) -> None:
         try:
             resume_edits = self.generate_prompt("tailor_resume")
-            self.resume_edits = resume_edits
+            self.save_response(resume_edits, "resume_edits")
         except Exception as e:
             raise Exception(f"Error tailoring resume: {str(e)}")
         
-        self.save_response(resume_edits, "resume_edits")
-
     
     def generate_cover_letter(self) -> None:
         try:
             cover_letter = self.generate_prompt("cover_letter")
-            self.cover_letter = cover_letter
+            self.save_response(cover_letter, "cover_letter")
         except Exception as e:
             raise Exception(f"Error generating cover letter: {str(e)}")
 
-        self.save_response(cover_letter, "cover_letter")
-
-    
+        
     def generate_prompt(self, purpose: str) -> str:
         """Tailor resume to match job description using AI"""
         prompt = self.get_prompt(purpose)
@@ -90,8 +86,8 @@ class JobTailor:
 
 
     def get_prompt(self, purpose: str) -> Prompt:
-        sys_prompt_path = Path( Path(__file__).parent.parent, "prompts", {purpose}, "sys_prompt.txt" )
-        usr_prompt_path = Path( Path(__file__).parent.parent, "prompts", {purpose}, "usr_prompt.txt" )
+        sys_prompt_path = Path( Path(__file__).parent.parent, "prompts", purpose, "sys_prompt.txt" )
+        usr_prompt_path = Path( Path(__file__).parent.parent, "prompts", purpose, "usr_prompt.txt" )
 
         with open(sys_prompt_path, "r") as f:
             sys_prompt = f.read()
@@ -114,7 +110,7 @@ class JobTailor:
             curr_response_path.mkdir(exist_ok=True)
 
             filename = f"{response_type}.txt"
-            response_path = Path(response_history_path, filename)
+            response_path = Path(curr_response_folder, filename)
             with open(response_path, "w", encoding="utf-8") as f:
                 f.write(response)
             
@@ -125,9 +121,15 @@ class JobTailor:
                 "model_used": getattr(self, 'model', '')
             }
             
-            metadata_path = Path(response_history_path, "metadata.json")
+            metadata_path = Path(curr_response_folder, "metadata.json")
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2)
                 
         except Exception as e:
             raise Exception(f"Error saving response: {str(e)}")
+
+
+# jt = JobTailor()
+# jt.upload_resume(Path("/Users/phillipmcdonough/Desktop/McDonough_Phil_J.pdf"))
+# jt.upload_job_desc(Path("/Users/phillipmcdonough/Desktop/test.txt"))
+# jt.generate_prompt("tailor_resume")
