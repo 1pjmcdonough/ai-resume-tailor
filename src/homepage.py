@@ -4,14 +4,14 @@ from pathlib import Path
 import tempfile
 import streamlit as st
 from job_tailor import JobTailor
-from helpers import Model
+from helpers import Model, UserInfo
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 
 def main():
     init_session_state()
     render_header()
-    tailoring_section()
+    tailoring_buttons()
     uploads_section()
     configs_section()
 
@@ -19,10 +19,14 @@ def main():
 def init_session_state():
     if "tailor" not in st.session_state:
         st.session_state.tailor = JobTailor()
-    if "resume_filename" not in st.session_state:
-        st.session_state.resume_filename = ""
-    if "job_desc_filename" not in st.session_state:
-        st.session_state.job_desc_filename = ""
+#TODO: Need to add resume, job desc, usr context, and model as session state variables so they don't get lost when changing pages
+    # if "user_info" not in st.session_state:
+    #     st.session_state.user_info = UserInfo(
+    #         resume="",
+    #         job_desc="",
+    #         model="",
+    #         usr_context=""
+    #         )
 
 
 def render_header():
@@ -54,14 +58,14 @@ def render_header():
     st.page_link("pages/cover_letter.py", label="✉️ Cover Letter")
 
 
-def tailoring_section():
+def tailoring_buttons():
     col1, col2 = st.columns(spec=2)
     with col1:
         st.button(
             label="Tailor Resume",
             type="primary",
             width="stretch",
-            disabled=not (st.session_state.resume_filename and st.session_state.job_desc_filename),
+            disabled=not (st.session_state.tailor.resume_filename and st.session_state.tailor.job_desc_filename),
             on_click=tailor_resume
         )
     with col2:
@@ -69,50 +73,50 @@ def tailoring_section():
             label="Generate Cover Letter",
             type="primary",
             width="stretch",
-            disabled=not (st.session_state.resume_filename and st.session_state.job_desc_filename),
+            disabled=not (st.session_state.tailor.resume_filename and st.session_state.tailor.job_desc_filename),
             on_click=generate_cover_letter
         )
 
 
 def tailor_resume():
-    with st.spinner("Tailoring your resume..."):
-        st.session_state.tailor.tailor_resume()
-        st.success("🎉 Resume tailored successfully!")
+    # with st.spinner("Tailoring your resume..."):
+    st.session_state.tailor.tailor_resume()
+    st.success("🎉 Resume tailored successfully!")
 
 
 def generate_cover_letter():
-    with st.spinner("Generating your cover letter..."):
-        st.session_state.tailor.generate_cover_letter()
-        st.success("📨 Cover letter generated successfully!")
+    # with st.spinner("Generating your cover letter..."):
+    st.session_state.tailor.generate_cover_letter()
+    st.success("📨 Cover letter generated successfully!")
 
 
 def uploads_section():
     st.markdown("## Upload your Files")
-    with st.expander("📄 Upload Your Resume", expanded=not st.session_state.resume_filename):
+    with st.expander("Upload Your Resume", expanded=not st.session_state.tailor.resume_filename):
         resume_file = st.file_uploader(
             label="Upload your resume file",
             type=["pdf", "docx", "txt"],
             help="Upload your resume in pdf, docx, or txt format",
             label_visibility="collapsed"
         )
-        
+
         if resume_file:
-            if not st.session_state.resume_filename:
+            if not st.session_state.tailor.resume_filename:
                 resume_tmp_path = save_temp_file(resume_file)
 
                 try:
                     st.session_state.tailor.upload_resume(resume_tmp_path)
-                    st.session_state.resume_filename = resume_file.name
+                    st.session_state.tailor.resume_filename = resume_file.name
                     st.rerun()
                 finally:
                     os.remove(resume_tmp_path)
         else:
-            st.session_state.resume_filename = ""
+            st.session_state.tailor.resume_filename = ""
 
-    if st.session_state.resume_filename:
-        st.success(f"Job description uploaded: {st.session_state.resume_filename}")
+    if st.session_state.tailor.resume_filename:
+        st.success(f"Job description uploaded: {st.session_state.tailor.resume_filename}")
     
-    with st.expander("📝 Upload the Job Description", expanded=not st.session_state.job_desc_filename):
+    with st.expander("Upload the Job Description", expanded=not st.session_state.tailor.job_desc_filename):
         job_desc_file = st.file_uploader(
             label="Upload the job description file",
             type=["pdf", "docx", "txt"],
@@ -121,20 +125,20 @@ def uploads_section():
         )
     
         if job_desc_file:
-            if not st.session_state.job_desc_filename:
+            if not st.session_state.tailor.job_desc_filename:
                 job_desc_tmp_path = save_temp_file(job_desc_file)
 
                 try:
                     st.session_state.tailor.upload_job_desc(job_desc_tmp_path)
-                    st.session_state.job_desc_filename = job_desc_file.name
+                    st.session_state.tailor.job_desc_filename = job_desc_file.name
                     st.rerun()
                 finally:
                     os.remove(job_desc_tmp_path)
         else:
-            st.session_state.job_desc_filename = ""
+            st.session_state.tailor.job_desc_filename = ""
 
-    if st.session_state.job_desc_filename:
-        st.success(f"Job description uploaded: {st.session_state.job_desc_filename}")
+    if st.session_state.tailor.job_desc_filename:
+        st.success(f"Job description uploaded: {st.session_state.tailor.job_desc_filename}")
         
 
 def save_temp_file(uploaded_file: UploadedFile) -> Path:
@@ -149,7 +153,7 @@ def configs_section():
         
     model = st.selectbox(
         label="Choose a Model",
-        options=[model.name for model in Model],
+        options=[model.value for model in Model],
         key="model_selection",
         help="Select the model to use for resume tailoring",
         placeholder="Select a model"
@@ -162,7 +166,7 @@ def configs_section():
         placeholder="Enter any other important information...",
         help="Optional: Add specific instructions for how you want your resume tailored"
     )
-    st.session_state.tailor.add_user_context(guidelines)
+    st.session_state.tailor.user_context = guidelines
 
 
 if __name__ == "__main__":
