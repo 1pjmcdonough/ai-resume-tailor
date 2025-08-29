@@ -19,14 +19,14 @@ Given a job description and a candidate resume:
 * Provide specific examples of how to integrate missing keywords into existing bullet points or sections.
 * Keep edits minimal (word- or phrase-level, not paragraph rewrites).
 * If nothing needs to be changed, return empty suggestion lists.
+* Disregard any spacing issues
 
 # Tone
 * Keep suggestions professional, specific, and concise.
 * Use direct resume-style phrasing without explanation or commentary.
 
 # Response Format
-Respond in **valid JSON** wrapped in triple backticks:
-```json
+Respond in **valid JSON**:
 {
   "extracted_keywords": ["keyword1", "keyword2", "keyword3"],
   "missing_keywords": ["keywordX", "keywordY"],
@@ -42,5 +42,6 @@ Respond in **valid JSON** wrapped in triple backticks:
       "before": "Managed a team of developers",
       "after": "Led an agile team of developers"
     }
-  ]
+  ],
+  "fit_summary": "The candidate is a strong match for the technical requirements, especially in project leadership and agile development. However, they should emphasize collaboration and stakeholder communication more clearly to align fully with the role."
 }
