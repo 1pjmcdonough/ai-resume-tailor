@@ -6,7 +6,7 @@ import PyPDF2
 from docx import Document
 from openai import OpenAI
 
-from helpers import Prompt, set_client
+from src.helpers import Prompt, set_client
 
 
 class JobTailor:
@@ -20,10 +20,12 @@ class JobTailor:
 
     def upload_resume(self, resume_path: Path) -> None:
         self.resume_text = self.parse_file(resume_path)
+        self.resume_filename = resume_path.name
 
     
     def upload_job_desc(self, job_desc_path: Path) -> None:
         self.job_desc_text = self.parse_file(job_desc_path)
+        self.job_desc_filename = job_desc_path.name
 
 
     def parse_file(self, file_path: Path) -> str:
@@ -55,6 +57,7 @@ class JobTailor:
         try:
             resume_edits = self.generate_prompt("tailor_resume")
             self.save_response(resume_edits, "resume_edits")
+            return resume_edits
         except Exception as e:
             raise Exception(f"Error tailoring resume: {str(e)}")
         
@@ -63,6 +66,7 @@ class JobTailor:
         try:
             cover_letter = self.generate_prompt("cover_letter")
             self.save_response(cover_letter, "cover_letter")
+            return cover_letter
         except Exception as e:
             raise Exception(f"Error generating cover letter: {str(e)}")
 
@@ -106,30 +110,24 @@ class JobTailor:
         try:
             response_history_path = Path(Path(__file__).parent.parent, "response_history")
             curr_response_folder = f"{self.resume_filename}_for_{self.job_desc_filename}"
-            curr_response_path = Path(response_history_path, curr_response_folder) 
+            curr_response_path = Path(response_history_path, curr_response_folder)
             curr_response_path.mkdir(exist_ok=True)
 
             filename = f"{response_type}.txt"
-            response_path = Path(curr_response_folder, filename)
+            response_path = Path(curr_response_path, filename)
             with open(response_path, "w", encoding="utf-8") as f:
                 f.write(response)
             
             metadata = {
                 "resume_filename": self.resume_filename,
                 "job_description_filename": self.job_desc_filename,
-                "user_context": getattr(self, 'user_context', ''),
-                "model_used": getattr(self, 'model', '')
+                "user_context": self.user_context,
+                "model_used": self.model
             }
             
-            metadata_path = Path(curr_response_folder, "metadata.json")
+            metadata_path = Path(curr_response_path, f"{response_type}_metadata.json")
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2)
                 
         except Exception as e:
             raise Exception(f"Error saving response: {str(e)}")
-
-
-# jt = JobTailor()
-# jt.upload_resume(Path("/Users/phillipmcdonough/Desktop/McDonough_Phil_J.pdf"))
-# jt.upload_job_desc(Path("/Users/phillipmcdonough/Desktop/test.txt"))
-# jt.generate_prompt("tailor_resume")
