@@ -25,8 +25,8 @@ Given a job description and a candidate resume:
 * Keep suggestions professional, specific, and concise.
 * Use direct resume-style phrasing without explanation or commentary.
 
-# Response Format
-Respond in **valid JSON**:
+# Example Response Format
+Respond in valid JSON:
 {
   "extracted_keywords": ["keyword1", "keyword2", "keyword3"],
   "missing_keywords": ["keywordX", "keywordY"],

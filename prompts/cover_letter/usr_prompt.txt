@@ -1,1 +1,11 @@
-Fill in usr prompt with main task, job description, resume, and user context
+Analyze the following job description and resume. 
+Generate a T-style cover letter according to the system prompt instructions.
+
+# Job Description
+{job_desc}
+
+# Resume
+{resume}
+
+# Additional Context
+{user_context}
