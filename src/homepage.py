@@ -19,14 +19,6 @@ def main():
 def init_session_state():
     if "tailor" not in st.session_state:
         st.session_state.tailor = JobTailor()
-#TODO: Need to add resume, job desc, usr context, and model as session state variables so they don't get lost when changing pages
-    # if "user_info" not in st.session_state:
-    #     st.session_state.user_info = UserInfo(
-    #         resume="",
-    #         job_desc="",
-    #         model="",
-    #         usr_context=""
-    #         )
 
 
 def render_header():
@@ -80,13 +72,13 @@ def tailoring_buttons():
 
 def tailor_resume():
     # with st.spinner("Tailoring your resume..."):
-    st.session_state.tailor.tailor_resume()
+    st.session_state.resume_edits = st.session_state.tailor.tailor_resume()
     st.success("🎉 Resume tailored successfully!")
 
 
 def generate_cover_letter():
     # with st.spinner("Generating your cover letter..."):
-    st.session_state.tailor.generate_cover_letter()
+    st.session_state.cover_letter = st.session_state.tailor.generate_cover_letter()
     st.success("📨 Cover letter generated successfully!")
 
 

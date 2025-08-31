@@ -1,99 +1,115 @@
 import streamlit as st
+import json
 from pathlib import Path
 from homepage import render_header
 
-results = Path( Path(__file__).parent.parent.parent, "results", "tailored_resume.json")
 
 def main():
     render_header()
 
-    if results:
+    if "resume_edits" in st.session_state:
         results_section()
     else:
         st.info("Tailor your resume for results!")
 
 
-def results_section(): #ai_response: json
-    # --- Keywords ---
-    st.header("Extracted Keywords from Job Description")
-    # st.write(", ".join(ai_response["extracted_keywords"]))
-
-    st.subheader("Missing Keywords")
-    # if ai_response["missing_keywords"]:
-        # st.write(", ".join(ai_response["missing_keywords"]))
-    # else:
-        # st.write("✅ No major keywords missing")
-
-    # --- Additions ---
-    st.header("Suggested Additions")
-    # if ai_response["suggested_additions"]:
-        # for add in ai_response["suggested_additions"]:
-            # with st.expander(f"Section: {add['section']}"):
-                # st.write(add["suggestion"])
-    # else:
-        # st.write("✅ No additions suggested")
-
-    # --- Revisions ---
-    st.header("Suggested Revisions")
-    # if ai_response["suggested_revisions"]:
-        # for rev in ai_response["suggested_revisions"]:
-            # with st.expander(f"Section: {rev['section']}"):
-            #     st.markdown(f"**Before:** {rev['before']}")
-            #     st.markdown(f"**After:**  :green[{rev['after']}]")
-    # else:
-    #     st.write("✅ No revisions suggested")
-
-    # ##################
-    # #cursor vsersion
-    # if 'results' in st.session_state:
-    #     st.markdown("---")
-    #     st.header("🎯 Results")
+def results_section():
+    """Display the resume tailoring results in an organized format"""
+    st.markdown("## 📄 Resume Tailoring Results")
+    
+    try:
+        # Parse the JSON response
+        results = json.loads(st.session_state.resume_edits)
         
-    #     # Create tabs for different outputs
-    #     tab1, tab2, tab3 = st.tabs([
-    #         "📄 Tailored Resume", 
-    #         "📊 Changes Summary", 
-    #         "💡 Recommendations"
-    #     ])
+        # Display fit summary at the top
+        if "fit_summary" in results:
+            st.markdown("### 🎯 Overall Fit Assessment")
+            st.info(results["fit_summary"])
         
-    #     with tab1:
-    #         st.subheader("Tailored Resume")
-    #         if st.session_state.results['tailored_resume']:
-    #             st.text_area(
-    #                 "Tailored Resume Content",
-    #                 value=st.session_state.results['tailored_resume'],
-    #                 height=400,
-    #                 disabled=True
-    #             )
-                
-    #             # Download button
-    #             resume_text = st.session_state.results['tailored_resume']
-    #             st.download_button(
-    #                 label="📥 Download Tailored Resume",
-    #                 data=resume_text,
-    #                 file_name="tailored_resume.txt",
-    #                 mime="text/plain"
-    #             )
-    #         else:
-    #             st.warning("No tailored resume content available.")
+        # Create tabs for different result sections
+        tab1, tab2, tab3, tab4 = st.tabs(["🔑 Keywords", "➕ Additions", "✏️ Revisions", "📊 Analysis"])
         
+        with tab1:
+            display_keywords_section(results)
         
-    #     with tab2:
-    #         st.subheader("Changes Summary")
-    #         if st.session_state.results['changes_summary']:
-    #             st.write(st.session_state.results['changes_summary'])
-    #         else:
-    #             st.warning("No changes summary available.")
+        with tab2:
+            display_additions_section(results)
+        
+        with tab3:
+            display_revisions_section(results)
+        
+        with tab4:
+            display_analysis_section(results)
             
-    #         if st.session_state.results['word_count']:
-    #             st.info(st.session_state.results['word_count'])
-        
-    #     with tab3:
-    #         st.subheader("Recommendations")
-    #         if st.session_state.results['recommendations']:
-    #             st.write(st.session_state.results['recommendations'])
-    #         else:
-    #             st.warning("No recommendations available.")
+    except json.JSONDecodeError:
+        # If the response is not valid JSON, display as plain text
+        st.markdown("### Raw Results")
+        st.text_area("Response", value=st.session_state.resume_edits, height=400, disabled=True)
+    except Exception as e:
+        st.error(f"Error displaying results: {str(e)}")
+
+
+def display_keywords_section(results):
+    """Display extracted and missing keywords"""
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### ✅ Extracted Keywords")
+        if "extracted_keywords" in results and results["extracted_keywords"]:
+            for keyword in results["extracted_keywords"]:
+                st.markdown(f"- {keyword}")
+        else:
+            st.info("No keywords extracted")
+    
+    with col2:
+        st.markdown("#### ❌ Missing Keywords")
+        if "missing_keywords" in results and results["missing_keywords"]:
+            for keyword in results["missing_keywords"]:
+                st.markdown(f"- {keyword}")
+        else:
+            st.success("No missing keywords identified")
+
+
+def display_additions_section(results):
+    """Display suggested additions"""
+    st.markdown("#### 💡 Suggested Additions")
+    
+    if "suggested_additions" in results and results["suggested_additions"]:
+        for addition in results["suggested_additions"]:
+            with st.expander(f"📝 {addition.get('section', 'Section')}", expanded=False):
+                st.markdown(f"**Suggestion:** {addition.get('suggestion', 'No suggestion provided')}")
+    else:
+        st.info("No additions suggested")
+
+
+def display_revisions_section(results):
+    """Display suggested revisions"""
+    st.markdown("#### ✏️ Suggested Revisions")
+    
+    if "suggested_revisions" in results and results["suggested_revisions"]:
+        for revision in results["suggested_revisions"]:
+            with st.expander(f"📝 {revision.get('section', 'Section')}", expanded=False):
+                st.markdown("**Before:**")
+                st.text(revision.get('before', 'No before text provided'))
+                st.markdown("**After:**")
+                st.text(revision.get('after', 'No after text provided'))
+    else:
+        st.info("No revisions suggested")
+
+
+def display_analysis_section(results):
+    """Display additional analysis information"""
+    st.markdown("#### 📊 Detailed Analysis")
+    
+    # Show all available keys for debugging/development
+    st.markdown("**Available Data Fields:**")
+    for key in results.keys():
+        if key not in ["fit_summary", "extracted_keywords", "missing_keywords", "suggested_additions", "suggested_revisions"]:
+            st.markdown(f"- **{key}:** {str(results[key])}")
+    
+    # Display raw JSON for developers
+    with st.expander("🔧 Raw JSON Data", expanded=False):
+        st.json(results)
 
 
 if __name__ == "__main__":
