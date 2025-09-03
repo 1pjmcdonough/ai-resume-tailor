@@ -9,18 +9,15 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 
 def main():
-    init_session_state()
+    if "tailor" not in st.session_state:
+        st.session_state.tailor = JobTailor()
+    
     render_header()
     tailoring_buttons()
     uploads_section()
     configs_section()
 
-
-def init_session_state():
-    if "tailor" not in st.session_state:
-        st.session_state.tailor = JobTailor()
-
-
+    
 def render_header():
     st.set_page_config(
         page_title="AI Job Tailor",
@@ -71,15 +68,23 @@ def tailoring_buttons():
 
 
 def tailor_resume():
-    # with st.spinner("Tailoring your resume..."):
-    st.session_state.resume_edits = st.session_state.tailor.tailor_resume()
-    st.success("🎉 Resume tailored successfully!")
+    with st.spinner("Tailoring your resume..."):
+        st.session_state.resume_edits = st.session_state.tailor.tailor_resume()
+        st.success("🎉 Resume tailored successfully!")
+        
+        # Add navigation button to view the results
+        if st.button("📊 View Resume Results", type="secondary"):
+            st.switch_page("pages/resume_results.py")
 
 
 def generate_cover_letter():
-    # with st.spinner("Generating your cover letter..."):
-    st.session_state.cover_letter = st.session_state.tailor.generate_cover_letter()
-    st.success("📨 Cover letter generated successfully!")
+    with st.spinner("Generating your cover letter..."):
+        st.session_state.cover_letter = st.session_state.tailor.generate_cover_letter()
+        st.success("📨 Cover letter generated successfully!")
+        
+        # Add navigation button to view the cover letter
+        if st.button("📄 View Cover Letter", type="secondary"):
+            st.switch_page("pages/cover_letter.py")
 
 
 def uploads_section():

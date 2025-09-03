@@ -53,7 +53,7 @@ class JobTailor:
         self.client = set_client(self.model)
 
         
-    def tailor_resume(self) -> None:
+    def tailor_resume(self) -> dict:
         try:
             resume_edits = self.generate_prompt("tailor_resume")
             self.save_response(resume_edits, "resume_edits")
@@ -62,7 +62,7 @@ class JobTailor:
             raise Exception(f"Error tailoring resume: {str(e)}")
         
     
-    def generate_cover_letter(self) -> None:
+    def generate_cover_letter(self) -> dict:
         try:
             cover_letter = self.generate_prompt("cover_letter")
             self.save_response(cover_letter, "cover_letter")
@@ -71,7 +71,7 @@ class JobTailor:
             raise Exception(f"Error generating cover letter: {str(e)}")
 
         
-    def generate_prompt(self, purpose: str) -> str:
+    def generate_prompt(self, purpose: str) -> dict:
         """Tailor resume to match job description using AI"""
         prompt = self.get_prompt(purpose)
 
@@ -86,8 +86,8 @@ class JobTailor:
             max_tokens=4000
         )
         
-        return response.choices[0].message.content
-
+        return json.loads(response.choices[0].message.content)
+        
 
     def get_prompt(self, purpose: str) -> Prompt:
         sys_prompt_path = Path( Path(__file__).parent.parent, "prompts", purpose, "sys_prompt.txt" )
@@ -105,18 +105,18 @@ class JobTailor:
         return Prompt(sys_prompt=sys_prompt, usr_prompt=usr_prompt)
 
 
-    def save_response(self, response: str, response_type: str) -> None:
-        """Save a single response as a text file in organized folders"""
+    def save_response(self, response: dict, response_type: str) -> None:
+        """Save a single response as a JSON file in organized folders"""
         try:
             response_history_path = Path(Path(__file__).parent.parent, "response_history")
             curr_response_folder = f"{self.resume_filename}_for_{self.job_desc_filename}"
             curr_response_path = Path(response_history_path, curr_response_folder)
             curr_response_path.mkdir(exist_ok=True)
 
-            filename = f"{response_type}.txt"
+            filename = f"{response_type}.json"
             response_path = Path(curr_response_path, filename)
             with open(response_path, "w", encoding="utf-8") as f:
-                f.write(response)
+                json.dump(response, f, indent=2)
             
             metadata = {
                 "resume_filename": self.resume_filename,
