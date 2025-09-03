@@ -7,6 +7,9 @@ from homepage import render_header
 def main():
     render_header()
 
+    with open(Path(Path(__file__).parent.parent.parent, "response_history", "McDonough_Phil_J.pdf_for_job_desc.pdf", "resume_edits.txt")) as f:
+        st.session_state.resume_edits = json.loads(f.read())
+
     if "resume_edits" in st.session_state:
         results_section()
     else:
@@ -18,13 +21,38 @@ def results_section():
     st.markdown("## 📄 Resume Tailoring Results")
     
     try:
-        # Parse the JSON response
-        results = json.loads(st.session_state.resume_edits)
+        # Parse the JSON response (handle both dict and string)
+        if isinstance(st.session_state.resume_edits, dict):
+            results = st.session_state.resume_edits
+        else:
+            results = json.loads(st.session_state.resume_edits)
         
         # Display fit summary at the top
         if "fit_summary" in results:
             st.markdown("### 🎯 Overall Fit Assessment")
             st.info(results["fit_summary"])
+        
+        # Add cover letter generation section
+        st.markdown("### 📝 Next Steps")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📨 Generate Cover Letter", type="primary", help="Generate a tailored cover letter based on your resume and job description"):
+                if "tailor" in st.session_state:
+                    with st.spinner("Generating your cover letter..."):
+                        st.session_state.cover_letter = st.session_state.tailor.generate_cover_letter()
+                        st.success("📨 Cover letter generated successfully!")
+                        
+                        # Auto-navigate to cover letter page
+                        st.switch_page("pages/cover_letter.py")
+                else:
+                    st.error("❌ Please go back to the homepage to generate a cover letter.")
+        
+        with col2:
+            if st.button("🏠 Back to Homepage", help="Return to the main page"):
+                st.switch_page("homepage.py")
+        
+        st.divider()
         
         # Create tabs for different result sections
         tab1, tab2, tab3, tab4 = st.tabs(["🔑 Keywords", "➕ Additions", "✏️ Revisions", "📊 Analysis"])
