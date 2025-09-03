@@ -15,7 +15,7 @@ Given a job description and a candidate resume:
    - T-table section: A two-column alignment of "Job Requirements" (from the description) vs. "My Qualifications" (from the resume). Each row must map one requirement to a directly relevant experience or skill. Keep phrasing resume-accurate and concise.  
    - Closing paragraph: A short conclusion reiterating fit, enthusiasm, and availability for next steps. The cover letter must end with:  
      ```
-     Best,
+     Best,\n
      {Candidate name from resume}
      ```  
 
