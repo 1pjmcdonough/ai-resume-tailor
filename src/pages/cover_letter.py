@@ -1,44 +1,42 @@
 import streamlit as st
 import json
 import io
-import base64
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.oxml import OxmlElement
 from pathlib import Path
 from homepage import render_header
+import copy
 
 
 def main():
     render_header()
 
-    with open(Path(Path(__file__).parent.parent.parent, "response_history", "McDonough_Phil_J.pdf_for_job_desc.pdf", "cover_letter.txt")) as f:
-        st.session_state.cover_letter = json.loads(f.read())
+    # if "cover_letter" not in st.session_state:
+    #     with open(Path(Path(__file__).parent.parent.parent, "response_history", "McDonough_Phil_J.pdf_for_job_desc.pdf", "cover_letter.txt")) as f:
+    #         st.session_state.cover_letter = json.loads(f.read())
+    if "cover_letter" in st.session_state:
 
-    if st.session_state.cover_letter:
+        if "cover_letter_edits" not in st.session_state:
+            st.session_state.cover_letter_edits = copy.deepcopy(st.session_state.cover_letter)
+
         tab1, tab2 = st.tabs(["Preview", "Edit"])
         
         with tab1:
-            display_preview(st.session_state.cover_letter)
+            display_preview()
             download_cl()
         
         with tab2:
-            edited_data = create_editable_form(st.session_state.cover_letter)
-            
-            # Update preview button
-            if st.button("🔄 Update Preview", type="primary"):
-                st.session_state.cover_letter = edited_data
-                st.success("✅ Cover letter updated! Check the Preview tab.")    
+            create_editable_form()
     else:
         st.info("Please generate a cover letter first.")
 
 
-def display_preview(data):
+def display_preview():
     st.subheader("Preview Cover Letter")
 
-    st.write(data["intro_paragraph"])
+    st.write(st.session_state.cover_letter_edits["intro_paragraph"])
     
     col1, col2 = st.columns(2)
     with col1:
@@ -47,7 +45,7 @@ def display_preview(data):
         st.markdown("##### My Qualifications")
     st.divider()
     
-    for pair in data["t_table"]:
+    for pair in st.session_state.cover_letter_edits["t_table"]:
         col1, col2 = st.columns(2)
         with col1:
             st.write(pair["job_requirement"])
@@ -55,11 +53,11 @@ def display_preview(data):
             st.write(pair["my_qualification"])
         st.divider()
 
-    st.write(data["closing_paragraph"])
+    st.write(st.session_state.cover_letter_edits["closing_paragraph"])
 
 
 def download_cl():    
-    doc_bytes = create_ttable_cover_letter_bytes(st.session_state.cover_letter)
+    doc_bytes = create_ttable_cover_letter_bytes(st.session_state.cover_letter_edits)
         
     st.download_button(
         label="⬇ Click here to download",
@@ -93,7 +91,7 @@ def create_ttable_cover_letter_bytes(json_data):
     doc.add_paragraph()
     
     if json_data["t_table"]:
-        table = doc.add_table(rows=len(json_data['t_table'])+1, cols=2) # +1 for the header
+        table = doc.add_table(rows=len(json_data["t_table"])+1, cols=2) # +1 for the header
         table.style = "Table Grid"
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         
@@ -108,10 +106,10 @@ def create_ttable_cover_letter_bytes(json_data):
             cell.paragraphs[0].runs[0].bold = True
             cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                 
-        for i, item in enumerate(json_data['t_table'], 1):
+        for i, item in enumerate(json_data["t_table"], 1):
             row_cells = table.rows[i].cells
-            row_cells[0].text = item['job_requirement']
-            row_cells[1].text = item['my_qualification']
+            row_cells[0].text = item["job_requirement"]
+            row_cells[1].text = item["my_qualification"]
             
             for cell in row_cells:
                 for paragraph in cell.paragraphs:
@@ -120,7 +118,7 @@ def create_ttable_cover_letter_bytes(json_data):
     doc.add_paragraph() # add some space after the table
     
     closing_para = doc.add_paragraph()
-    closing_para.add_run(json_data['closing_paragraph'])
+    closing_para.add_run(json_data["closing_paragraph"])
     
     doc_buffer = io.BytesIO()
     doc.save(doc_buffer)
@@ -129,82 +127,79 @@ def create_ttable_cover_letter_bytes(json_data):
     return doc_buffer.getvalue()
 
 
-def create_editable_form(initial_data):
+def create_editable_form():
     """Create an editable form for the cover letter data"""
-    st.subheader("✏️ Edit Your Cover Letter")
-    
-    # Initialize session state if not exists
-    if 'st.session_state.cover_letter' not in st.session_state:
-        st.session_state.cover_letter = initial_data.copy()
-    
-    data = st.session_state.cover_letter
-    
-    # Edit introduction
-    st.markdown("**Introduction Paragraph:**")
-    data['intro_paragraph'] = st.text_area(
-        "Introduction", 
-        value=data['intro_paragraph'],
-        height=100,
+    st.subheader("Edit Cover Letter")
+
+    st.session_state.cover_letter_edits["intro_paragraph"] = st.text_area(
+        label="Introduction Paragraph", 
+        value=st.session_state.cover_letter_edits["intro_paragraph"],
+        height=180,
         key="intro_edit"
     )
-    
-    # Edit T-table entries
-    st.markdown("**Requirements vs Qualifications Table:**")
-    
-    # Button to add new row
-    col1, col2 = st.columns([1, 4])
+
+    # T-table header
+    col1, col2, _ = st.columns([2, 2, 0.3])
     with col1:
-        if st.button("➕ Add Row"):
-            data['t_table'].append({
-                'job_requirement': '',
-                'my_qualification': ''
-            })
-            st.rerun()
-    
-    # Edit existing rows
-    rows_to_delete = []
-    for i, item in enumerate(data['t_table']):
-        st.markdown(f"**Row {i+1}:**")
+        st.markdown("##### Your Requirements")
+    with col2:
+        st.markdown("##### My Qualifications")
+     
+    # Display each row
+    for i, item in enumerate(st.session_state.cover_letter_edits["t_table"]):
         col1, col2, col3 = st.columns([2, 2, 0.3])
-        
+
         with col1:
             item['job_requirement'] = st.text_area(
-                f"Job Requirement {i+1}",
-                value=item['job_requirement'],
+                "Job Requirement",
+                value=item["job_requirement"],
                 height=80,
-                key=f"req_{i}"
+                key=f"req_{i}",
+                label_visibility="collapsed"
             )
-        
+
         with col2:
             item['my_qualification'] = st.text_area(
-                f"My Qualification {i+1}",
+                "My Qualification",
                 value=item['my_qualification'],
                 height=80,
-                key=f"qual_{i}"
+                key=f"qual_{i}",
+                label_visibility="collapsed"
             )
-        
+
         with col3:
-            st.write("")  # Space for alignment
-            if st.button("🗑️", key=f"delete_{i}", help="Delete this row"):
-                rows_to_delete.append(i)
-    
-    # Delete marked rows
-    for i in reversed(rows_to_delete):
-        del data['t_table'][i]
+            st.write("")
+            if st.button("🗑️", key=f"del_{i}", help="Delete this row"):
+                st.session_state.cover_letter_edits["t_table"] = [
+                    row for j, row in enumerate(st.session_state.cover_letter_edits["t_table"]) if j != i
+                ]
+                st.rerun()
+
+    if st.button("➕ Add Row", type="secondary"):
+        new_row = {'job_requirement': '', 'my_qualification': ''}
+        st.session_state.cover_letter_edits['t_table'].append(new_row)
         st.rerun()
+
+    st.markdown("---")
     
-    st.divider()
-    
-    # Edit closing
-    st.markdown("**Closing Paragraph:**")
-    data['closing_paragraph'] = st.text_area(
-        "Closing", 
-        value=data['closing_paragraph'],
-        height=100,
+    st.session_state.cover_letter_edits['closing_paragraph'] = st.text_area(
+        label="Closing Paragraph", 
+        value=st.session_state.cover_letter_edits['closing_paragraph'],
+        height=180,
         key="closing_edit"
     )
-    
-    return data
+
+    st.markdown("### Actions")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("💾 Save Changes", type="primary"):
+            st.rerun()
+
+    with col2:
+        if st.button("↩ Reset Changes"):
+            st.session_state.cover_letter_edits = copy.deepcopy(st.session_state.cover_letter)
+            st.info("Edits reset to original cover letter.")
+            st.rerun()
 
 
 if __name__ == "__main__":
