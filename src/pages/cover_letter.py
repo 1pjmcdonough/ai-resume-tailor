@@ -1,11 +1,9 @@
 import streamlit as st
-import json
 import io
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from pathlib import Path
 from homepage import render_header
 import copy
 
@@ -13,11 +11,7 @@ import copy
 def main():
     render_header()
 
-    # if "cover_letter" not in st.session_state:
-    #     with open(Path(Path(__file__).parent.parent.parent, "response_history", "McDonough_Phil_J.pdf_for_job_desc.pdf", "cover_letter.txt")) as f:
-    #         st.session_state.cover_letter = json.loads(f.read())
     if "cover_letter" in st.session_state:
-
         if "cover_letter_edits" not in st.session_state:
             st.session_state.cover_letter_edits = copy.deepcopy(st.session_state.cover_letter)
 
@@ -25,7 +19,7 @@ def main():
         
         with tab1:
             display_preview()
-            download_cl()
+            download_cl(st.session_state.cover_letter_edits)
         
         with tab2:
             create_editable_form()
@@ -56,27 +50,19 @@ def display_preview():
     st.write(st.session_state.cover_letter_edits["closing_paragraph"])
 
 
-def download_cl():    
-    doc_bytes = create_ttable_cover_letter_bytes(st.session_state.cover_letter_edits)
+def download_cl(edits: dict):    
+    doc_bytes = create_ttable_cover_letter_bytes(edits)
         
     st.download_button(
-        label="⬇ Click here to download",
+        label="⬇ Download Cover Letter",
         data=doc_bytes,
         file_name="cover_letter.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         type="primary"
     )
 
-def create_ttable_cover_letter_bytes(json_data):
-    """
-    Create a T-table formatted cover letter from JSON data and return as bytes
-    
-    Args:
-        json_data (dict or str): Either a dictionary or JSON string containing the cover letter data
-    
-    Returns:
-        bytes: The document as bytes for download
-    """
+
+def create_ttable_cover_letter_bytes(edits: dict):
     doc = Document()
     
     for section in doc.sections:
@@ -86,12 +72,12 @@ def create_ttable_cover_letter_bytes(json_data):
         section.right_margin = Inches(1)
     
     intro_para = doc.add_paragraph()
-    intro_para.add_run(json_data["intro_paragraph"])
+    intro_para.add_run(edits["intro_paragraph"])
     
     doc.add_paragraph()
     
-    if json_data["t_table"]:
-        table = doc.add_table(rows=len(json_data["t_table"])+1, cols=2) # +1 for the header
+    if edits["t_table"]:
+        table = doc.add_table(rows=len(edits["t_table"])+1, cols=2) # +1 for the header
         table.style = "Table Grid"
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         
@@ -106,7 +92,7 @@ def create_ttable_cover_letter_bytes(json_data):
             cell.paragraphs[0].runs[0].bold = True
             cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                 
-        for i, item in enumerate(json_data["t_table"], 1):
+        for i, item in enumerate(edits["t_table"], 1):
             row_cells = table.rows[i].cells
             row_cells[0].text = item["job_requirement"]
             row_cells[1].text = item["my_qualification"]
@@ -118,7 +104,7 @@ def create_ttable_cover_letter_bytes(json_data):
     doc.add_paragraph() # add some space after the table
     
     closing_para = doc.add_paragraph()
-    closing_para.add_run(json_data["closing_paragraph"])
+    closing_para.add_run(edits["closing_paragraph"])
     
     doc_buffer = io.BytesIO()
     doc.save(doc_buffer)

@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import streamlit as st
 from job_tailor import JobTailor
-from helpers import Model, UserInfo
+from helpers import Model
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 
@@ -70,21 +70,15 @@ def tailoring_buttons():
 def tailor_resume():
     with st.spinner("Tailoring your resume..."):
         st.session_state.resume_edits = st.session_state.tailor.tailor_resume()
-        st.success("🎉 Resume tailored successfully!")
-        
-        # Add navigation button to view the results
-        if st.button("📊 View Resume Results", type="secondary"):
-            st.switch_page("pages/resume_results.py")
+        st.divider()
+        st.info("📄 Resume tailored successfully! Visit the resume results page to view the results.")
 
 
 def generate_cover_letter():
     with st.spinner("Generating your cover letter..."):
         st.session_state.cover_letter = st.session_state.tailor.generate_cover_letter()
-        st.success("📨 Cover letter generated successfully!")
-        
-        # Add navigation button to view the cover letter
-        if st.button("📄 View Cover Letter", type="secondary"):
-            st.switch_page("pages/cover_letter.py")
+        st.divider()
+        st.info("✉️ Cover letter generated successfully! Visit the cover letter page to view the results.")
 
 
 def uploads_section():
@@ -147,23 +141,22 @@ def save_temp_file(uploaded_file: UploadedFile) -> Path:
     
 def configs_section():
     st.markdown("## Set some Configurations")
+    with st.expander("Configurations"):
+        model = st.selectbox(
+            label="Choose a Model",
+            options=[model.value for model in Model],
+            key="model_selection",
+            help="Select the model to use for resume tailoring"
+        )
+        st.session_state.tailor.set_model(model)
+        st.session_state.tailor.configure_client()
         
-    model = st.selectbox(
-        label="Choose a Model",
-        options=[model.value for model in Model],
-        key="model_selection",
-        help="Select the model to use for resume tailoring",
-        placeholder="Select a model"
-    )
-    st.session_state.tailor.set_model(model)
-    st.session_state.tailor.configure_client()
-    
-    guidelines = st.text_area(
-        label="Add Custom Guidelines (Optional)",
-        placeholder="Enter any other important information...",
-        help="Optional: Add specific instructions for how you want your resume tailored"
-    )
-    st.session_state.tailor.user_context = guidelines
+        guidelines = st.text_area(
+            label="Add Custom Guidelines (Optional)",
+            placeholder="Enter any other important information...",
+            help="Optional: Add specific instructions for how you want your resume tailored"
+        )
+        st.session_state.tailor.user_context = guidelines
 
 
 if __name__ == "__main__":

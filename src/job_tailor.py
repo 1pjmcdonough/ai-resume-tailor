@@ -109,7 +109,8 @@ class JobTailor:
         """Save a single response as a JSON file in organized folders"""
         try:
             response_history_path = Path(Path(__file__).parent.parent, "response_history")
-            curr_response_folder = f"{self.resume_filename}_for_{self.job_desc_filename}"
+            response_history_path.mkdir(exist_ok=True)
+            curr_response_folder = f"{self.resume_filename.split('.')[0]}_for_{self.job_desc_filename.split('.')[0]}"
             curr_response_path = Path(response_history_path, curr_response_folder)
             curr_response_path.mkdir(exist_ok=True)
 
