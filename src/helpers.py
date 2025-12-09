@@ -60,6 +60,8 @@ def set_client(model: str) -> OpenAI:
 
 
 def parse_url(url):
+    #TODO
+    return
     """
     Fetches and parses the job description from a LinkedIn job posting URL.
     
