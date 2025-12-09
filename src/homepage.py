@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 import tempfile
@@ -19,6 +18,7 @@ def main():
 
     
 def render_header():
+    """Renders the page header with custom styling and navigation links."""
     st.set_page_config(
         page_title="AI Job Tailor",
         layout="wide"
@@ -48,6 +48,7 @@ def render_header():
 
 
 def tailoring_buttons():
+    """Renders the primary action buttons for tailoring resume and generating cover letter."""
     col1, col2 = st.columns(spec=2)
     with col1:
         st.button(
@@ -68,6 +69,7 @@ def tailoring_buttons():
 
 
 def tailor_resume():
+    """Handles the resume tailoring process and stores the results in session state."""
     with st.spinner("Tailoring your resume..."):
         st.session_state.resume_edits = st.session_state.tailor.tailor_resume()
         st.divider()
@@ -75,6 +77,7 @@ def tailor_resume():
 
 
 def generate_cover_letter():
+    """Handles the cover letter generation process and stores the results in session state."""
     with st.spinner("Generating your cover letter..."):
         st.session_state.cover_letter = st.session_state.tailor.generate_cover_letter()
         st.divider()
@@ -82,6 +85,7 @@ def generate_cover_letter():
 
 
 def uploads_section():
+    """Renders the file upload section for resume and job description files."""
     st.markdown("## Upload your Files")
     with st.expander("Upload Your Resume", expanded=not st.session_state.tailor.resume_filename):
         resume_file = st.file_uploader(
@@ -133,13 +137,22 @@ def uploads_section():
         
 
 def save_temp_file(uploaded_file: UploadedFile) -> Path:
-    """Save uploaded file to a temp path and return path"""
+    """
+    Save uploaded file to a temp path and return path.
+
+    Args:
+        uploaded_file (UploadedFile): The uploaded file object to be saved.
+
+    Returns:
+        Path: The file system path to the saved temporary file.
+    """
     with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp:
         tmp.write(uploaded_file.read())
         return Path(tmp.name)
 
     
 def configs_section():
+    """Renders the configuration section for model selection and custom guidelines."""
     st.markdown("## Set some Configurations")
     with st.expander("Configurations"):
         model = st.selectbox(
