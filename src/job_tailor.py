@@ -10,12 +10,12 @@ from src.helpers import Prompt, set_client
 
 
 class JobTailor:
-    def __init__(self):
-        self.model: Optional[str] = "grok-4-0709"
-        self.client: OpenAI = set_client(self.model)
-        self.user_context: Optional[str] = ""
-        self.resume_filename: Optional[str] = ""
-        self.job_desc_filename: Optional[str] = ""
+    def __init__(self, model="grok-4-0709"):
+        self.model: str = model
+        self.client: OpenAI = set_client(model)
+        self.user_context: str = ""
+        self.resume_filename: Optional[str] = None
+        self.job_desc_filename: Optional[str] = None
 
 
     def upload_resume(self, resume_path: Path) -> None:
@@ -54,6 +54,11 @@ class JobTailor:
 
         
     def tailor_resume(self) -> dict:
+        if not self.resume_filename:
+            raise Exception("No resume uploaded.")
+        elif not self.job_desc_filename:
+            raise Exception("No job description uploaded.")
+
         try:
             resume_edits = self.generate_prompt("tailor_resume")
             self.save_response(resume_edits, "resume_edits")
@@ -63,6 +68,11 @@ class JobTailor:
         
     
     def generate_cover_letter(self) -> dict:
+        if not self.resume_filename:
+            raise Exception("No resume uploaded.")
+        elif not self.job_desc_filename:
+            raise Exception("No job description uploaded.")
+
         try:
             cover_letter = self.generate_prompt("cover_letter")
             self.save_response(cover_letter, "cover_letter")

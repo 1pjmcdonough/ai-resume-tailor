@@ -45,18 +45,18 @@ def results_section():
 
 
 def display_keywords_section(results):
-    """Display extracted and missing keywords with better formatting"""
+    """Display found and missing keywords with better formatting"""
     
     col1, col2 = st.columns(2)
     
     with col1:
-        extracted_keywords = results.get("extracted_keywords", [])
+        found_keywords = results.get("found_keywords", [])
         st.markdown(f"#### Keywords Found")
-        st.markdown(f"*Found {len(extracted_keywords)} Keyword(s) already in your resume*")
+        st.markdown(f"*Found {len(found_keywords)} Keyword(s) already in your resume*")
         
-        if extracted_keywords:
+        if found_keywords:
             keywords_html = ""
-            for keyword in extracted_keywords:
+            for keyword in found_keywords:
                 keywords_html += f'<span style="background-color: #d4edda; color: #155724; padding: 4px 8px; margin: 2px; border-radius: 12px; display: inline-block; font-size: 0.9em;">{keyword}</span> '
             st.markdown(keywords_html, unsafe_allow_html=True)
     
@@ -120,7 +120,7 @@ OVERALL FIT:
 {results.get('fit_summary', 'No summary available')}
 
 KEYWORDS ANALYSIS:
-- Found Keywords: {len(results.get('extracted_keywords', []))}
+- Found Keywords: {len(results.get('found_keywords', []))}
 - Missing Keywords: {len(results.get('missing_keywords', []))}
 
 SUGGESTED ADDITIONS ({len(results.get('suggested_additions', []))}):
