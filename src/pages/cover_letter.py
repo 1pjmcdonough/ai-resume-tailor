@@ -24,7 +24,7 @@ def main():
         with tab2:
             create_editable_form()
     else:
-        st.info("Please generate a cover letter first.")
+        st.info("Generate a cover letter for results!")
 
 
 def display_preview():
