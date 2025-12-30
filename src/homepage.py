@@ -82,8 +82,8 @@ def generate_cover_letter():
 
 
 def uploads_section():
-    st.markdown("## Upload your Files")
-    with st.expander("Upload Your Resume", expanded=not st.session_state.tailor.resume_filename):
+    st.markdown("## Upload Files")
+    with st.expander("Resume", expanded=not st.session_state.tailor.resume_filename):
         resume_file = st.file_uploader(
             label="Upload your resume file",
             type=["pdf", "docx", "txt"],
@@ -105,9 +105,9 @@ def uploads_section():
             st.session_state.tailor.resume_filename = ""
 
     if st.session_state.tailor.resume_filename:
-        st.success(f"Job description uploaded: {st.session_state.tailor.resume_filename}")
+        st.success(f"Resume uploaded: {st.session_state.tailor.resume_filename}")
     
-    with st.expander("Upload the Job Description", expanded=not st.session_state.tailor.job_desc_filename):
+    with st.expander("Job Description", expanded=not st.session_state.tailor.job_desc_filename):
         job_desc_file = st.file_uploader(
             label="Upload the job description file",
             type=["pdf", "docx", "txt"],
@@ -140,7 +140,7 @@ def save_temp_file(uploaded_file: UploadedFile) -> Path:
 
     
 def configs_section():
-    st.markdown("## Set some Configurations")
+    st.markdown("## Set Configurations")
     with st.expander("Configurations"):
         model = st.selectbox(
             label="Choose a Model",
